@@ -11,8 +11,6 @@ Ce projet implémente un producteur et un consommateur Kafka en Python, avec tra
 5. [Structure du Projet](#structure-du-projet)
 6. [Démarrage du Projet](#démarrage-du-projet)
 7. [Fonctionnalités](#fonctionnalités)
-8. [Contributions](#contributions)
-9. [Licence](#licence)
 
 ---
 
