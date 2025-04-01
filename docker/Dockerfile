@@ -10,6 +10,8 @@ COPY ../requirements.txt /app/
 # Installer les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
+
 # Copier le dossier src depuis la racine du projet dans le répertoire de travail du conteneur
 COPY ../src /app/src
 

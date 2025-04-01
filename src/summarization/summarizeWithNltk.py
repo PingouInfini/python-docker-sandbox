@@ -1,8 +1,6 @@
 import nltk
 from nltk.tokenize import sent_tokenize
 
-nltk.download("punkt")
-
 def summarize(texte, max_chars=4000):
     phrases = sent_tokenize(texte)
     resume = []

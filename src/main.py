@@ -29,6 +29,20 @@ logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                     level=LOG_LEVEL,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+# Messages mockés à envoyer
+mocked_messages = [
+    {"text": "texte1"},
+    {"text": "texte2"}
+]
+
+
+
+def push_mocked_messages(producer: KafkaProducer):
+    """ Envoie des messages mockés dans le topic Kafka """
+    logger.info("Envoi des messages mockés au topic Kafka.")
+    for message in mocked_messages:
+        producer.send_message(message['text'])
+
 
 def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
     """ Consomme les messages, les transforme et les renvoie dans un autre topic """
@@ -40,7 +54,7 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
                 transformed_message = summarize(message, max_chars=4000)
                 enriched_message = {"modified_text": transformed_message}
                 producer.send_message(str(enriched_message))  # Envoie du message transformé dans le topic TextToNer
-                logger.info("Message envoyé : {enriched_message}")
+                logger.info("Message envoyé :" + transformed_message)
     except KeyboardInterrupt:
         logger.info("Surveillance du consumer arrêtée par l'utilisateur.")
     finally:
@@ -49,8 +63,12 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
 
 if __name__ == "__main__":
     # Initialisation des producteurs et consommateurs Kafka
+   # producer_for_mocked = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC)
     producer_for_transformed = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_PRODUCER_TOPIC)
     consumer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC)
+
+    # Étape 1 : Pousser des messages mockés dans KAFKA_CONSUMER_TOPIC
+    #push_mocked_messages(producer_for_mocked)
 
     # Étape 2 : Consommer les messages du topic KAFKA_CONSUMER_TOPIC, transformer et renvoyer
     consume_and_transform(consumer, producer_for_transformed)
