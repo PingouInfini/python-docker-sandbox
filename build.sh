@@ -43,10 +43,10 @@ docker_connect
 
 # on lance le build !
 echo "Build"
-docker build -t pingouinfinihub/python-docker-sandbox -f docker/Dockerfile .
+docker build -t pingouinfinihub/summarize -f docker/Dockerfile .
 
-docker tag pingouinfinihub/python-docker-sandbox pingouinfinihub/python-docker-sandbox:"$version"
-docker tag pingouinfinihub/python-docker-sandbox pingouinfinihub/python-docker-sandbox:latest
-docker push pingouinfinihub/python-docker-sandbox:"$version"
-docker push pingouinfinihub/python-docker-sandbox:latest
+docker tag pingouinfinihub/summarize pingouinfinihub/summarize:"$version"
+docker tag pingouinfinihub/summarize pingouinfinihub/summarize:latest
+docker push pingouinfinihub/summarize:"$version"
+docker push pingouinfinihub/summarize:latest
 echo "Done !"
