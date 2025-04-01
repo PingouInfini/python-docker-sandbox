@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -6,7 +7,7 @@ from dotenv import load_dotenv  # Import de load_dotenv
 
 from kafka.kafka_consumer import KafkaConsumer
 from kafka.kafka_producer import KafkaProducer
-from utils.utils import uppercase_vowels
+from src.ner.name_entity_recognition import get_model_for_language, ner_on_text
 
 load_dotenv()  # Charge les variables d'environnement depuis le fichier .env
 
@@ -33,9 +34,16 @@ logger = logging.getLogger(__name__)
 
 # Messages mockés à envoyer
 mocked_messages = [
-    {"text": "hello world"},
-    {"text": "Damien is amazing"},
-    {"text": "this is a test"}
+    {"texte": "hello world"},
+    {"texte": "Damien is amazing"},
+    {"texte": "this is a test"},
+    {"texte": "Hola qui va là, Inspecteur Gadget!"},
+    {"texte": "Hola qui va là, Inspecteur Gadget!"},
+    {"texte": "Les chaussettes de l'archiduchesse sont-elle sèches?"},
+    {"texte": "Fatal Bazooka"},
+    {"texte": "29r Planquette, Vity-sur-Seine, France"},
+    {"texte": "Alice est au pays des merveilles"},
+    {"texte": "Alice is in wonderland"},
 ]
 
 
@@ -43,7 +51,8 @@ def push_mocked_messages(producer: KafkaProducer):
     """ Envoie des messages mockés dans le topic Kafka """
     logger.info("Envoi des messages mockés au topic Kafka.")
     for message in mocked_messages:
-        producer.send_message(message['text'])
+        logger.debug("sending JSON : %s", json.dumps(message))
+        producer.send_message(json.dumps(message))
 
 
 def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
@@ -52,11 +61,17 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
     try:
         while True:
             message = consumer.read_message()
-            if message:
-                transformed_message = uppercase_vowels(message)
-                enriched_message = {"text": message, "modified_text": transformed_message}
-                producer.send_message(str(enriched_message))  # Envoie du message transformé dans le topic TextToNer
-                logger.info(f"Message envoyé : {enriched_message}")
+            logger.info("Receiving JSON : %s", message)
+            if message is not None:
+                # transformed_message = uppercase_vowels(message)
+                msg_parsed = json.loads(message)
+                logger.debug("Parsed message : %s", msg_parsed)
+
+                text = msg_parsed["texte"]
+                msg_parsed["ner"] = ner_on_text(text, get_model_for_language(text))
+                # Envoie du message transformé dans le topic TextToNer
+                producer.send_message(json.dumps(msg_parsed))
+                logger.info(f"Message envoyé : {msg_parsed}")
     except KeyboardInterrupt:
         logger.info("Surveillance du consumer arrêtée par l'utilisateur.")
     finally:
@@ -65,9 +80,9 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
 
 if __name__ == "__main__":
     # Initialisation des producteurs et consommateurs Kafka
-    producer_for_mocked = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC)
-    producer_for_transformed = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_PRODUCER_TOPIC)
-    consumer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC)
+    producer_for_mocked = KafkaProducer(KAFKA_HOST, int(KAFKA_PORT), KAFKA_CONSUMER_TOPIC)
+    producer_for_transformed = KafkaProducer(KAFKA_HOST, int(KAFKA_PORT), KAFKA_PRODUCER_TOPIC)
+    consumer = KafkaConsumer(KAFKA_HOST, int(KAFKA_PORT), KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC)
 
     # Étape 1 : Pousser des messages mockés dans KAFKA_CONSUMER_TOPIC
     push_mocked_messages(producer_for_mocked)
