@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=1.0
+version=1.1
 
 docker_connect() {
   # Vérifier si l'utilisateur est déjà connecté à Docker
