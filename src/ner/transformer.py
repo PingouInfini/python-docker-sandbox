@@ -15,7 +15,7 @@ camembert_ner = pipeline("ner", model=model, aggregation_strategy='simple', toke
 def ner_on_text(text: str):
     ner = camembert_ner(text)
 
-    ner_doubleless = {}
+    # ner_doubleless = {}
     for entity in ner:
         # Change le nom des attributs
         entity['position'] = entity.pop('start')
@@ -24,16 +24,17 @@ def ner_on_text(text: str):
         entity['score'] = float(entity.pop('score'))
         del entity['end']
 
-        # Dédoublonnage
-        if not entity['valeur'] in ner_doubleless:
-            ner_doubleless[entity['valeur']] = entity
-            ner_doubleless[entity['valeur']]["position"] = [entity["position"]]
-            ner_doubleless[entity['valeur']]["score"] = [entity["score"]]
-        else:
-            ner_doubleless[entity['valeur']]["position"].append(entity['position'])
-            ner_doubleless[entity['valeur']]["score"].append(entity['score'])
-
-    return [v for k, v in ner_doubleless.items()]
+    #     # Dédoublonnage
+    #     if not entity['valeur'] in ner_doubleless:
+    #         ner_doubleless[entity['valeur']] = entity
+    #         ner_doubleless[entity['valeur']]["position"] = [entity["position"]]
+    #         ner_doubleless[entity['valeur']]["score"] = [entity["score"]]
+    #     else:
+    #         ner_doubleless[entity['valeur']]["position"].append(entity['position'])
+    #         ner_doubleless[entity['valeur']]["score"].append(entity['score'])
+    #
+    # return [v for k, v in ner_doubleless.items()]
+    return ner
 
 
 class Test(unittest.TestCase):
