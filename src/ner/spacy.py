@@ -6,10 +6,6 @@ from langdetect import detect
 from spacy import Language
 
 
-# Texte d'article pour tester
-# article = open("article_test_ner.txt", "r").read()
-
-
 def get_model_for_language(text: str) -> Language:
     """"Récupère le modèle adapté à la langue du texte"""
     # Détecter la langue
@@ -38,12 +34,12 @@ def ner_on_text(text: str, nlp: Language):
     for ent in doc.ents:
         logging.debug("Entitée détectée : %s | %s | %s", ent.text, ent.label_, ent.start_char)
         if not ent.text in ner:
-            ner[ent.text] = {"name": ent.text, "type": ent.label_, "position": [ent.start_char]}
+            ner[ent.text] = {"valeur": ent.text, "type": ent.label_, "position": [ent.start_char]}
         else:
             ner[ent.text]["position"].append(ent.start_char)
 
-    logging.debug("Entitées trouvées :", ner)
-    return ner
+    # Format les entités trouvées
+    return [v for k, v in ner.items()]
 
 
 class Test(unittest.TestCase):
@@ -51,7 +47,7 @@ class Test(unittest.TestCase):
         text = "Isabelle a les yeux bleus"
         nlp = spacy.load("fr_core_news_md")
         result = ner_on_text(text, nlp)
-        expected_result = {"Isabelle": {"name": "Isabelle", "type": "PER", "position": [0]}}
+        expected_result = [{"valeur": "Isabelle", "type": "PER", "position": [0]}]
         self.assertEqual(expected_result, result)
 
     def detect_language(self, text: str, language_module: str):
@@ -65,6 +61,6 @@ class Test(unittest.TestCase):
         self.detect_language(text, module)
 
     def test_detect_english(self):
-        text = "Hello world"
+        text = "Hello world! How are you?"
         module = "en_core_web_sm"
         self.detect_language(text, module)
