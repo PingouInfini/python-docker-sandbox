@@ -1,76 +1,92 @@
 import logging
 import os
 import sys
+import json
+import time
 
-from dotenv import load_dotenv  # Import de load_dotenv
-
-from kafka.kafka_consumer import KafkaConsumer
+from dotenv import load_dotenv
+from json_merger import JsonMerger
+from mock_data import generate_mock_messages
 from kafka.kafka_producer import KafkaProducer
-from utils.utils import uppercase_vowels
+from kafka.kafka_consumer import  KafkaConsumer
 
-load_dotenv()  # Charge les variables d'environnement depuis le fichier .env
+# === Chargement des variables d'environnement ===
+load_dotenv()
 
-# Variables d'environnement
 KAFKA_HOST = os.environ.get('KAFKA_HOST')
 KAFKA_PORT = os.environ.get('KAFKA_PORT')
-KAFKA_CONSUMER_TOPIC = os.environ.get('KAFKA_CONSUMER_TOPIC')
+KAFKA_CONSUMER_TOPIC_SUMMARIZE = os.environ.get('KAFKA_CONSUMER_TOPIC_SUMMARIZE')
+KAFKA_CONSUMER_TOPIC_GAZETTEER = os.environ.get('KAFKA_CONSUMER_TOPIC_GAZETTEER')
 KAFKA_PRODUCER_TOPIC = os.environ.get('KAFKA_PRODUCER_TOPIC')
 KAFKA_GROUP_ID = os.environ.get('KAFKA_GROUP_ID', 'my-consumer-group')
 KAFKA_AUTO_OFFSET_RESET = os.environ.get('KAFKA_AUTO_OFFSET_RESET', 'earliest')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
+OUTPUT_DIR = os.environ.get('OUTPUT_DIR')
 
-# Vérification si toutes les variables sont définies
-if not all([KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC, KAFKA_PRODUCER_TOPIC]):
+# === Vérification des variables ===
+if not all([KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC_SUMMARIZE, KAFKA_CONSUMER_TOPIC_GAZETTEER, KAFKA_PRODUCER_TOPIC]):
     print("Erreur : Une ou plusieurs variables d'environnement sont manquantes.")
-    print("Assurez-vous que les variables suivantes soient définies :")
-    print("KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC, KAFKA_PRODUCER_TOPIC")
-    sys.exit(1)  # Arrêt du programme avec code d'erreur
+    sys.exit(1)
 
+# === Configuration des logs ===
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                     level=LOG_LEVEL,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
-# Messages mockés à envoyer
-mocked_messages = [
-    {"text": "hello world"},
-    {"text": "Damien is amazing"},
-    {"text": "this is a test"}
-]
+# === Initialisation des Kafka Consumer/Producer ===
+consumer_gazetteer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC_GAZETTEER)
+consumer_summarize = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC_SUMMARIZE)
+producer = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_PRODUCER_TOPIC)
 
 
-def push_mocked_messages(producer: KafkaProducer):
-    """ Envoie des messages mockés dans le topic Kafka """
+# === Envoi des messages mockés pour simuler les topics d'entrée ===
+def send_mock_messages():
+    """Envoi des messages simulés aux topics Kafka pour tester la fusion."""
+    logger.info("Envoi des messages mockés aux topics Kafka.")
+
+    msg_gazetteer, msg_summarize = generate_mock_messages()
+
+    # Envoi des messages aux topics appropriés
+    consumer_gazetteer.send_message(json.dumps(msg_gazetteer))  # Pour le topic Gazetteer
+    consumer_summarize.send_message(json.dumps(msg_summarize))  # Pour le topic Summarize
+
+    logger.info(f"Message Gazetteer envoyé : {msg_gazetteer}")
+    logger.info(f"Message Summarize envoyé : {msg_summarize}")
+
+# === Push les messages mockés dans le producer Kafka ===
+def push_mock_messages(producer: KafkaProducer):
+    """Push les messages mockés dans le topic producer Kafka """
     logger.info("Envoi des messages mockés au topic Kafka.")
-    for message in mocked_messages:
-        producer.send_message(message['text'])
+    for message in generate_mock_messages():
+        producer.send_message(json.dumps(message))
 
+# === Démarrer le consumer Kafka qui va consommer les messages ===
+def start_consumer():
+    """Démarre le consommateur Kafka qui va fusionner les JSON et les envoyer dans un autre topic"""
+    logger.info("Démarrage de la consommation des messages - envoi au JSON Merger...")
+    merger = JsonMerger(KAFKA_HOST, KAFKA_PORT, producer)  # Passer le producer au merger
+    merger.start()
 
-def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
-    """ Consomme les messages, les transforme et les renvoie dans un autre topic """
-    logger.info("Démarrage de la consommation des messages et de la transformation.")
-    try:
-        while True:
-            message = consumer.read_message()
-            if message:
-                transformed_message = uppercase_vowels(message)
-                enriched_message = {"text": message, "modified_text": transformed_message}
-                producer.send_message(str(enriched_message))  # Envoie du message transformé dans le topic TextToNer
-                logger.info(f"Message envoyé : {enriched_message}")
-    except KeyboardInterrupt:
-        logger.info("Surveillance du consumer arrêtée par l'utilisateur.")
-    finally:
-        consumer.close()
+# === Test de merge - peut être appelé seul depuis l'exe pour tester ===
+def start_merge_test():
+    """Teste la fusion des JSON et exporte le fichier fusionné"""
+    logger.info("Test du JSON Merger...")
 
+    msg_gazetteer, msg_summarize = generate_mock_messages()
 
+    merger = JsonMerger(consumer_gazetteer, producer)
+
+    # Fusionner les messages des deux listes
+    for g_msg, s_msg in zip(msg_gazetteer, msg_summarize):
+        # Fusionner les données de Gazetteer
+        merger.merge_json(g_msg["uuid"], g_msg)
+
+        # Fusionner les données de Summarize
+        merger.merge_json(s_msg["uuid"], s_msg)
+
+# === Exécution du programme ===
 if __name__ == "__main__":
-    # Initialisation des producteurs et consommateurs Kafka
-    producer_for_mocked = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC)
-    producer_for_transformed = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_PRODUCER_TOPIC)
-    consumer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC)
-
-    # Étape 1 : Pousser des messages mockés dans KAFKA_CONSUMER_TOPIC
-    push_mocked_messages(producer_for_mocked)
-
-    # Étape 2 : Consommer les messages du topic KAFKA_CONSUMER_TOPIC, transformer et renvoyer
-    consume_and_transform(consumer, producer_for_transformed)
+    start_merge_test()  # Pour tester la fusion
+    # send_mock_messages()  # Pour envoyer les messages aux topics Kafka
+    # start_consumer()  # Lancer le consommateur

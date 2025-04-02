@@ -1,18 +1,24 @@
 from confluent_kafka import Producer
 import logging
+import json
+import os
+
+# Activer/Désactiver le mock
+MOCK_KAFKA = os.getenv("MOCK_KAFKA", "True").lower() == "true"
 
 class KafkaProducer:
     def __init__(self, host: str, port: int, topic: str):
-        # Configuration du producteur Kafka
         self.logger = logging.getLogger(__name__)
-        self.producer = Producer({
-            'bootstrap.servers': f'{host}:{port}'
-        })
         self.topic = topic
-        self.logger.debug(f"KafkaProducer initialisé pour le topic {self.topic} sur {host}:{port}")
+
+        if MOCK_KAFKA:
+            self.logger.warning(f"Mode MOCK activé : KafkaProducer va afficher les messages au lieu de les envoyer !")
+        else:
+            self.producer = Producer({'bootstrap.servers': f'{host}:{port}'})
+            self.logger.debug(f"KafkaProducer initialisé pour le topic {self.topic} sur {host}:{port}")
 
     def delivery_report(self, err, msg):
-        """ Callback appelé à la livraison du message """
+        """ Callback appelée à la livraison du message """
         if err is not None:
             self.logger.error(f"Échec de la livraison du message: {err}")
         else:
@@ -20,5 +26,8 @@ class KafkaProducer:
 
     def send_message(self, message: str):
         """ Méthode pour envoyer un message à Kafka """
-        self.producer.produce(self.topic, message, callback=self.delivery_report)
-        self.producer.flush()  # S'assure que le message est envoyé
+        if MOCK_KAFKA:
+            print(f"[MOCK PRODUCER] Message envoyé sur {self.topic}: {json.dumps(message, indent=2)}")
+        else:
+            self.producer.produce(self.topic, json.dumps(message), callback=self.delivery_report)
+            self.producer.flush()  # S'assure que le message est envoyé
