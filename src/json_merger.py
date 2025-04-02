@@ -4,20 +4,22 @@ import logging
 from datetime import datetime
 
 class JsonMerger:
-    def __init__(self, consumer, producer):
-        self.consumer = consumer
+    def __init__(self, producer):
         self.producer = producer
         self.cache = {}
 
     def merge_json(self, uuid, new_data):
         """ Fusionne les JSON lorsque les deux parties sont reçues et les enregistre """
         # Si le message existe déjà dans le cache, on fusionne les données
+        print(f"UUID reçu par merge_json : {uuid}")
         if uuid in self.cache:
+            print("UUID trouvé dans le cache : il va le merger")
             existing_data = self.cache[uuid]
 
             # Fusionner les deux messages sans écraser
             existing_data.update(new_data)
             merged_data = existing_data
+            print("Merge terminé")
 
             logging.info(f"Fusion réussie pour UUID {uuid}: {merged_data}")
 

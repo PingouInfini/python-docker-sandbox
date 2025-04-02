@@ -12,7 +12,7 @@ class KafkaConsumer:
         })
         self.topic = topic
         self.consumer.subscribe([self.topic])
-        self.logger.debug(f"KafkaConsumer initialisé pour le topic {self.topic} sur {host}:{port} avec le group-id {group_id}")
+        self.logger.info(f"KafkaConsumer initialisé pour le topic {self.topic} sur {host}:{port} avec le group-id {group_id}")
 
     def read_message(self, timeout: float = 1.0):
         """ Méthode pour lire un message depuis Kafka """

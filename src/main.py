@@ -39,34 +39,49 @@ consumer_gazetteer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA
 consumer_summarize = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC_SUMMARIZE)
 producer = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_PRODUCER_TOPIC)
 
-
 # === Envoi des messages mockés pour simuler les topics d'entrée ===
 def send_mock_messages():
-    """Envoi des messages simulés aux topics Kafka pour tester la fusion."""
+    """Envoi des messages simulés aux consumers"""
     logger.info("Envoi des messages mockés aux topics Kafka.")
 
     msg_gazetteer, msg_summarize = generate_mock_messages()
 
+    # Init des producers pour qu'on puisse envoyer les messages dedans et les consommer
+    producer_gaz_test = KafkaProducer(KAFKA_HOST, KAFKA_PORT, KAFKA_CONSUMER_TOPIC_GAZETTEER)
+
     # Envoi des messages aux topics appropriés
-    consumer_gazetteer.send_message(json.dumps(msg_gazetteer))  # Pour le topic Gazetteer
-    consumer_summarize.send_message(json.dumps(msg_summarize))  # Pour le topic Summarize
+    for msg in msg_gazetteer:
+        producer_gaz_test.send_message(msg)
+
+    for msg in msg_summarize:
+        producer_gaz_test.send_message(msg)
+
+
+    #consumer_summarize.send_message(json.dumps(msg_summarize))  # Pour le topic Summarize
 
     logger.info(f"Message Gazetteer envoyé : {msg_gazetteer}")
-    logger.info(f"Message Summarize envoyé : {msg_summarize}")
-
-# === Push les messages mockés dans le producer Kafka ===
-def push_mock_messages(producer: KafkaProducer):
-    """Push les messages mockés dans le topic producer Kafka """
-    logger.info("Envoi des messages mockés au topic Kafka.")
-    for message in generate_mock_messages():
-        producer.send_message(json.dumps(message))
+    #logger.info(f"Message Summarize envoyé : {msg_summarize}")
 
 # === Démarrer le consumer Kafka qui va consommer les messages ===
-def start_consumer():
+def consume_and_merge():
     """Démarre le consommateur Kafka qui va fusionner les JSON et les envoyer dans un autre topic"""
     logger.info("Démarrage de la consommation des messages - envoi au JSON Merger...")
-    merger = JsonMerger(KAFKA_HOST, KAFKA_PORT, producer)  # Passer le producer au merger
-    merger.start()
+
+    # init du merger
+    merger = JsonMerger(producer)
+
+    try:
+        while True:
+            # Lire les messages des deux consumers
+            msg = consumer_gazetteer.read_message(2.0)
+
+            if msg is not None:  # Vérification pour éviter une erreur
+                msg_json = json.loads(msg)
+                merger.merge_json(msg_json["uuid"], msg_json)
+            else:
+                print("Aucun message reçu du topic Gazetteer.")
+    finally:
+        consumer_gazetteer.close()
 
 # === Test de merge - peut être appelé seul depuis l'exe pour tester ===
 def start_merge_test():
@@ -75,7 +90,7 @@ def start_merge_test():
 
     msg_gazetteer, msg_summarize = generate_mock_messages()
 
-    merger = JsonMerger(consumer_gazetteer, producer)
+    merger = JsonMerger(producer)
 
     # Fusionner les messages des deux listes
     for g_msg, s_msg in zip(msg_gazetteer, msg_summarize):
@@ -87,6 +102,6 @@ def start_merge_test():
 
 # === Exécution du programme ===
 if __name__ == "__main__":
-    start_merge_test()  # Pour tester la fusion
-    # send_mock_messages()  # Pour envoyer les messages aux topics Kafka
-    # start_consumer()  # Lancer le consommateur
+    # start_merge_test()  # Pour tester la fusion
+    send_mock_messages()  # Pour envoyer les messages aux topics Kafka
+    consume_and_merge()  # Lancer les consumers et merge

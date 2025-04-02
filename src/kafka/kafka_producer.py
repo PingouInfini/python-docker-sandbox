@@ -4,7 +4,7 @@ import json
 import os
 
 # Activer/Désactiver le mock
-MOCK_KAFKA = os.getenv("MOCK_KAFKA", "True").lower() == "true"
+MOCK_KAFKA = os.getenv("MOCK_KAFKA", "True").lower() == "false"
 
 class KafkaProducer:
     def __init__(self, host: str, port: int, topic: str):

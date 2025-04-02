@@ -5,7 +5,7 @@ def generate_mock_messages():
     gazeteer_messages = [
         {
             "uuid": "123e4567-e89b-12d3-a456-426614174000",
-            "ENR": [
+            "ner": [
                 {"type": "Personne", "Valeur": "Adnane", "Position": 7},
                 {"type": "Evenement", "Valeur": "Procès", "Position": 18},
                 {"type": "Localisation", "Valeur": "Rue de Grenelle", "Position": 42, "MGRS": "4QFJ 12345 67890"}
@@ -13,7 +13,7 @@ def generate_mock_messages():
         },
         {
             "uuid": "123e4567-e89b-12d3-a456-426614174001",
-            "ENR": [
+            "ner": [
                 {"type": "Personne", "Valeur": "Marie", "Position": 4},
                 {"type": "Evenement", "Valeur": "Réunion", "Position": 16},
                 {"type": "Localisation", "Valeur": "Paris", "Position": 25}
@@ -21,7 +21,7 @@ def generate_mock_messages():
         },
         {
             "uuid": "123e4567-e89b-12d3-a456-426614174002",
-            "ENR": [
+            "ner": [
                 {"type": "Organisation", "Valeur": "Greenpeace", "Position": 9},
                 {"type": "Evenement", "Valeur": "Manifestation", "Position": 24},
                 {"type": "Localisation", "Valeur": "Place de la République", "Position": 35}
@@ -30,7 +30,7 @@ def generate_mock_messages():
         # Nouvelles entrées avec des sujets politiques
         {
             "uuid": "123e4567-e89b-12d3-a456-426614174003",
-            "ENR": [
+            "ner": [
                 {"type": "Personne", "Valeur": "Emmanuel Macron", "Position": 4},
                 {"type": "Evenement", "Valeur": "Discours politique", "Position": 20},
                 {"type": "Localisation", "Valeur": "Lyon", "Position": 45}
@@ -38,7 +38,7 @@ def generate_mock_messages():
         },
         {
             "uuid": "123e4567-e89b-12d3-a456-426614174004",
-            "ENR": [
+            "ner": [
                 {"type": "Organisation", "Valeur": "ONU", "Position": 11},
                 {"type": "Evenement", "Valeur": "Réunion de l'Assemblée générale", "Position": 28},
                 {"type": "Localisation", "Valeur": "New York", "Position": 36}
