@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -6,7 +7,7 @@ from dotenv import load_dotenv  # Import de load_dotenv
 
 from kafka.kafka_consumer import KafkaConsumer
 from kafka.kafka_producer import KafkaProducer
-from utils.utils import uppercase_vowels
+from utils.utils import json_to_csv
 
 load_dotenv()  # Charge les variables d'environnement depuis le fichier .env
 
@@ -33,17 +34,28 @@ logger = logging.getLogger(__name__)
 
 # Messages mockés à envoyer
 mocked_messages = [
-    {"text": "hello world"},
-    {"text": "Damien is amazing"},
-    {"text": "this is a test"}
-]
+    {"FilePath":"/home/lgaulier/Documents/test.txt",
+    "Summary":"resume",
+    "NER":[
+            {
+            "Type":"Personne",
+            "Valeur":"toto",
+            "Position":[7,52,27]
+            },
+            {
+            "Type":"Personne",
+            "Valeur":"toto",
+            "Position":[7,52,27],
+            "MGRS":"4QFJ 12345 67890"
+            }
+        ]
+}]
 
 
 def push_mocked_messages(producer: KafkaProducer):
     """ Envoie des messages mockés dans le topic Kafka """
     logger.info("Envoi des messages mockés au topic Kafka.")
-    for message in mocked_messages:
-        producer.send_message(message['text'])
+    producer.send_message(str(mocked_messages))
 
 
 def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
@@ -53,10 +65,8 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
         while True:
             message = consumer.read_message()
             if message:
-                transformed_message = uppercase_vowels(message)
-                enriched_message = {"text": message, "modified_text": transformed_message}
-                producer.send_message(str(enriched_message))  # Envoie du message transformé dans le topic TextToNer
-                logger.info(f"Message envoyé : {enriched_message}")
+                json_to_csv(message)
+                logger.info(f"csv créé")
     except KeyboardInterrupt:
         logger.info("Surveillance du consumer arrêtée par l'utilisateur.")
     finally:
