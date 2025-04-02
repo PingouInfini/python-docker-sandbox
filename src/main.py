@@ -7,7 +7,7 @@ from dotenv import load_dotenv  # Import de load_dotenv
 
 from kafka.kafka_consumer import KafkaConsumer
 from kafka.kafka_producer import KafkaProducer
-from src.ner.name_entity_recognition import get_model_for_language, ner_on_text
+from ner.transformer import ner_on_text
 
 load_dotenv()  # Charge les variables d'environnement depuis le fichier .env
 
@@ -61,14 +61,23 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
     try:
         while True:
             message = consumer.read_message()
-            logger.info("Receiving JSON : %s", message)
             if message is not None:
                 # transformed_message = uppercase_vowels(message)
                 msg_parsed = json.loads(message)
                 logger.debug("Parsed message : %s", msg_parsed)
 
+                if "texte" not in msg_parsed:
+                    logger.warning("Il n'y a pas de texte à analyser")
+                    continue
+
+                if not isinstance(msg_parsed["texte"], str):
+                    logger.warning("Le ""texte"" n'est pas du texte")
+                    continue
+
                 text = msg_parsed["texte"]
-                msg_parsed["ner"] = ner_on_text(text, get_model_for_language(text))
+                # msg_parsed["ner"] = ner_on_text(text, get_model_for_language(text))
+                msg_parsed["ner"] = ner_on_text(text)
+
                 # Envoie du message transformé dans le topic TextToNer
                 producer.send_message(json.dumps(msg_parsed))
                 logger.info(f"Message envoyé : {msg_parsed}")
