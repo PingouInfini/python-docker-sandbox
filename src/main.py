@@ -33,7 +33,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
 logger = logging.getLogger(__name__)
 
 # Messages mockés à envoyer
-mocked_messages = [
+mocked_message = '''
     {"FilePath":"/home/lgaulier/Documents/test.txt",
     "Summary":"resume",
     "NER":[
@@ -49,13 +49,13 @@ mocked_messages = [
             "MGRS":"4QFJ 12345 67890"
             }
         ]
-}]
+}'''
 
 
 def push_mocked_messages(producer: KafkaProducer):
     """ Envoie des messages mockés dans le topic Kafka """
     logger.info("Envoi des messages mockés au topic Kafka.")
-    producer.send_message(str(mocked_messages))
+    producer.send_message(mocked_message)
 
 
 def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     consumer = KafkaConsumer(KAFKA_HOST, KAFKA_PORT, KAFKA_GROUP_ID, KAFKA_AUTO_OFFSET_RESET, KAFKA_CONSUMER_TOPIC)
 
     # Étape 1 : Pousser des messages mockés dans KAFKA_CONSUMER_TOPIC
-    push_mocked_messages(producer_for_mocked)
+    #push_mocked_messages(producer_for_mocked)
 
     # Étape 2 : Consommer les messages du topic KAFKA_CONSUMER_TOPIC, transformer et renvoyer
     consume_and_transform(consumer, producer_for_transformed)
