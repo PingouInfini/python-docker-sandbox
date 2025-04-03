@@ -21,7 +21,7 @@ class JsonMerger:
             logging.info(f"Fusion réussie pour UUID {uuid}: {merged_data}")
 
             # Sauvegarder dans un fichier : pour du debug
-            # self.save_json_to_file(merged_data)
+            self.save_json_to_file(merged_data)
 
             # Envoyer le message fusionné à Kafka
             self.producer.send_message(json.dumps(merged_data))

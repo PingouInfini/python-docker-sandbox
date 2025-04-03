@@ -111,5 +111,5 @@ def start_merge_test():
 # === Exécution du programme ===
 if __name__ == "__main__":
     # start_merge_test()  # Pour tester la fusion seule
-    send_mock_messages()  # Pour envoyer les messages aux topics Kafka
+    # send_mock_messages()  # Pour envoyer les messages aux topics Kafka
     consume_and_merge()  # Lancer les consumers et merge
