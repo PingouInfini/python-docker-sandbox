@@ -33,18 +33,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
 logger = logging.getLogger(__name__)
 
 # Messages mockés à envoyer
-mocked_messages = [
-    {"texte": "hello world"},
-    {"texte": "Damien is amazing"},
-    {"texte": "this is a test"},
-    {"texte": "Hola qui va là, Inspecteur Gadget!"},
-    {"texte": "Hola qui va là, Inspecteur Gadget!"},
-    {"texte": "Les chaussettes de l'archiduchesse sont-elle sèches?"},
-    {"texte": "Fatal Bazooka"},
-    {"texte": "29r Planquette, Vity-sur-Seine, France"},
-    {"texte": "Alice est au pays des merveilles"},
-    {"texte": "Alice is in wonderland"},
-]
+mocked_messages = []
 
 
 def push_mocked_messages(producer: KafkaProducer):
