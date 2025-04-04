@@ -78,7 +78,7 @@ def consume_and_transform(consumer: KafkaConsumer, producer: KafkaProducer):
                 message_json = json.loads(message)
                 transformed_message = summarize(message_json.get("text", "erreur lors de la génération du résumé"), max_chars=4000)
                 enriched_message = {"uuid": message_json.get("uuid", ""), "FilePath": message_json.get("FilePath",""),"summary": transformed_message}
-                producer.send_message(str(enriched_message))  # Envoie du message transformé dans le topic TextToNer
+                producer.send_message(json.dumps(enriched_message))  # Envoie du message transformé dans le topic TextToNer
                 logger.info("Message envoyé :" + str(enriched_message))
     except KeyboardInterrupt:
         logger.info("Surveillance du consumer arrêtée par l'utilisateur.")
